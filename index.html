@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bilim AI Hub</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bilim AI Hub</h1>
+    <p class="sub">Қазақ тіліндегі оқу көмекшісі (Gemini арқылы)</p>
+
+    <div class="panel">
+      <label>Рөл
+        <select id="role">
+          <option>Оқушы</option>
+          <option>Мұғалім</option>
+          <option>Ата-ана</option>
+        </select>
+      </label>
+
+      <label>Пән
+        <select id="subject">
+          <option>Математика</option>
+          <option>Қазақ тілі</option>
+          <option>Ағылшын тілі</option>
+          <option>Тарих</option>
+          <option>Информатика</option>
+          <option>Жалпы</option>
+        </select>
+      </label>
+
+      <label>Режим
+        <select id="mode">
+          <option value="explain">Түсіндіру</option>
+          <option value="check">Тексеру</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="agree">
+      <input id="agree" type="checkbox" />
+      Мен ережелерді түсіндім: дайын емтихан/бақылау жауабын толық сұрамаймын.
+    </label>
+
+    <div id="chat" class="chat"></div>
+
+    <div class="composer">
+      <textarea id="message" rows="3" placeholder="Сұрағыңды жаз..."></textarea>
+      <button id="send">Жіберу</button>
+    </div>
+
+    <div id="status" class="status">API: дайын</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
