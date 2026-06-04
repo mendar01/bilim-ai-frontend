@@ -1,6 +1,16 @@
 // ======= НАСТРОЙКА: укажи backend URL =======
 const API_URL = "https://bilim-ai-backend-zavo.onrender.com/api/chat";
+let score = Number(localStorage.getItem("score") || 0);
 
+function renderScore(){
+  const v = document.getElementById("scoreValue");
+  if (v) v.textContent = String(score);
+}
+function addScore(delta){
+  score += delta;
+  localStorage.setItem("score", String(score));
+  renderScore();
+}
 // Elements
 const langKz = document.getElementById("langKz");
 const langRu = document.getElementById("langRu");
@@ -167,7 +177,7 @@ function applyLang(lang){
   messageEl.placeholder = T[lang].inputPh;
   sendBtn.textContent = T[lang].send;
   setText("helperText", T[lang].helper);
-
+renderScore();
   renderPrompts(lang);
 }
 
@@ -216,6 +226,10 @@ clearChatBtn.addEventListener("click", () => {
   const lang = localStorage.getItem("lang") || "ru";
   chatBox.innerHTML = "";
   addMsg(T[lang].cleared, "ai");
+  // после того как добавили ответ AI:
+if (isLikelyReadyEssayRequest(msg)) {
+  attachIntegrityChoiceUnderLastAiMessage();
+}
 });
 
 sendBtn.addEventListener("click", send);
@@ -239,3 +253,78 @@ messageEl.addEventListener("keydown", (e) => {
     addMsg("Сәлем! Сынып/тақырып және не керек екенін жаз: түсіндіру ме, тексеру ме.", "ai");
   }
 })();
+
+function isLikelyReadyEssayRequest(userText){
+  const t = (userText || "").toLowerCase();
+
+  const essayWords = [
+    "эссе","сочинение","реферат","доклад","презентация","конспект","мәтін","шығарма"
+  ];
+
+  const readyWords = [
+    "готов", "полностью", "целиком", "напис", "сразу текст", "дай текст",
+    "жазып бер", "дайын", "толық", "көшіріп", "копировать", "көшіріп алу"
+  ];
+
+  const hasEssay = essayWords.some(w => t.includes(w));
+  const wantsReady = readyWords.some(w => t.includes(w));
+
+  return hasEssay && wantsReady;
+}
+function attachIntegrityChoiceUnderLastAiMessage(){
+  const chatBox = document.getElementById("chatBox");
+  if (!chatBox) return;
+
+  // ищем последнее AI сообщение
+  const aiMsgs = chatBox.querySelectorAll(".msg--ai .msg__bubble");
+  const lastBubble = aiMsgs[aiMsgs.length - 1];
+  if (!lastBubble) return;
+
+  // чтобы не добавлялось дважды
+  if (lastBubble.querySelector(".choice")) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "choice";
+  wrap.innerHTML = `
+    <div class="choice__title">
+      Таңдау жаса: ЖИ-ді қалай қолданасың?
+    </div>
+    <div class="choice__grid">
+      <button class="choice__btn" type="button" data-opt="A">
+        <b>A)</b> ЖИ-ге дайын эссе жазғызып, көшіріп алу
+      </button>
+      <button class="choice__btn" type="button" data-opt="B">
+        <b>Ә)</b> ЖИ-ден эссенің жоспарын сұрап, мәтінді өзі жазу
+      </button>
+    </div>
+    <div class="choice__result" style="display:none"></div>
+  `;
+
+  const result = wrap.querySelector(".choice__result");
+
+  wrap.querySelectorAll(".choice__btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const opt = btn.getAttribute("data-opt");
+
+      // блокируем повторный выбор
+      wrap.querySelectorAll(".choice__btn").forEach(b => b.disabled = true);
+
+      result.style.display = "block";
+
+      if (opt === "A"){
+        result.className = "choice__result choice__result--red";
+        result.textContent = "Қызыл аймақ: Академиялық адалдық бұзылды, ұпай шегеріледі!";
+        addScore(-2);
+      } else {
+        result.className = "choice__result choice__result--green";
+        result.textContent = "Жасыл аймақ: Керемет! Сен ЖИ-ді ассистент ретінде қолдандың";
+        addScore(+2);
+      }
+
+      // обновим бейдж
+      renderScore();
+    });
+  });
+
+  lastBubble.appendChild(wrap);
+}
