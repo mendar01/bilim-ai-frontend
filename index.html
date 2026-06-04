@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="dark" />
   <title>Bilim AI Hub</title>
-  <meta name="description" content="Bilim AI Hub — учебный помощник: объяснение, проверка, примеры. Удобный чат-интерфейс." />
   <link rel="stylesheet" href="./style.css" />
 </head>
 
@@ -13,87 +12,42 @@
   <div class="bg-grid"></div>
   <div class="blob b1"></div>
   <div class="blob b2"></div>
-  <div class="blob b3"></div>
 
-  <!-- Welcome / Rules Modal -->
-  <div class="modal" id="rulesModal" aria-hidden="true">
-    <div class="modal__card">
-      <div class="modal__head">
-        <div>
-          <h3 id="rulesTitle">Добро пожаловать</h3>
-          <p id="rulesSub">
-            Bilim AI Hub — учебный помощник. Мы объясняем шагами и помогаем понять тему.
-          </p>
-        </div>
-        <button class="btn btn--ghost" id="closeRules" title="Закрыть">Закрыть</button>
-      </div>
-
-      <div class="modal__body">
-        <ul class="rules" id="rulesList"></ul>
-
-        <div class="modal__grid">
-          <div class="mini">
-            <h4 id="rulesMiniTitle1">Как получить лучший ответ</h4>
-            <p id="rulesMiniText1">Укажи класс, тему и что именно нужно (объяснить/проверить).</p>
-          </div>
-          <div class="mini">
-            <h4 id="rulesMiniTitle2">Режимы</h4>
-            <p id="rulesMiniText2"><b>Түсіндіру</b> — объяснение. <b>Тексеру</b> — проверка решения.</p>
-          </div>
-        </div>
-
-        <label class="agree">
-          <input type="checkbox" id="rulesAgree" />
-          <span id="rulesAgreeText">Я понимаю правила и согласен(на)</span>
-        </label>
-      </div>
-
-      <div class="modal__actions">
-        <button class="btn btn--ghost" id="rulesLater">Сначала посмотрю</button>
-        <button class="btn btn--primary" id="rulesStart" disabled>Начать</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Topbar -->
   <header class="topbar">
     <div class="container topbar__inner">
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
-        <div>
-          <h1>Bilim AI Hub</h1>
-          <p class="muted" id="subtitle">Учебный помощник · Понятно · Красиво · Быстро</p>
+        <div class="brand__text">
+          <div class="brand__title">Bilim AI Hub</div>
+          <div class="brand__sub" id="subtitle"></div>
         </div>
       </div>
 
       <div class="top-actions">
-        <!-- Language switch -->
-        <div class="lang">
-          <button class="lang__btn" id="langKz" type="button" aria-label="Қазақша">KZ</button>
-          <button class="lang__btn" id="langRu" type="button" aria-label="Русский">RU</button>
-          <div class="lang__pill" id="langPill" aria-hidden="true"></div>
+        <div class="lang" role="tablist" aria-label="Language">
+          <button class="lang__btn" id="langKz" type="button">KZ</button>
+          <button class="lang__btn" id="langRu" type="button">RU</button>
+          <span class="lang__pill" id="langPill" aria-hidden="true"></span>
         </div>
 
-        <button class="btn btn--ghost" id="openRules">Ережелер</button>
-        <button class="btn btn--ghost" id="showTips">Подсказки</button>
-        <button class="btn btn--danger" id="clearChat">Очистить</button>
+        <button class="btn btn--ghost" id="showTips" type="button"></button>
+        <button class="btn btn--danger" id="clearChat" type="button"></button>
       </div>
     </div>
   </header>
 
-  <main class="container grid">
-    <!-- Left column -->
-    <section class="stack">
-      <!-- Settings -->
+  <main class="container layout">
+    <!-- LEFT -->
+    <aside class="side">
       <section class="card">
         <div class="card__head">
-          <h2 id="settingsTitle">Настройки</h2>
-          <div class="badge"><span class="dot"></span><span id="statusText">Online</span></div>
+          <h2 id="settingsTitle"></h2>
+          <span class="badge"><span class="dot"></span><span id="statusText"></span></span>
         </div>
 
         <div class="card__body">
           <div class="field">
-            <label for="role" id="roleLabel">Роль</label>
+            <label for="role" id="roleLabel"></label>
             <select id="role">
               <option value="Оқушы">Оқушы</option>
               <option value="Студент">Студент</option>
@@ -102,7 +56,7 @@
           </div>
 
           <div class="field">
-            <label for="subject" id="subjectLabel">Предмет</label>
+            <label for="subject" id="subjectLabel"></label>
             <select id="subject">
               <option value="Жалпы">Жалпы</option>
               <option value="Қазақ тілі">Қазақ тілі</option>
@@ -115,89 +69,51 @@
           </div>
 
           <div class="field">
-            <label for="mode" id="modeLabel">Режим</label>
+            <label for="mode" id="modeLabel"></label>
             <select id="mode">
-              <option value="explain">Түсіндіру (объяснить)</option>
-              <option value="check">Тексеру (проверить)</option>
+              <option value="explain" id="modeExplainOpt"></option>
+              <option value="check" id="modeCheckOpt"></option>
             </select>
           </div>
 
-          <div class="notice">
-            <div class="notice__icon">i</div>
-            <div class="notice__text" id="noticeText">
-              Совет: чтобы ответ был лучше — укажи класс, тему и что именно нужно.
-            </div>
-          </div>
+          <div class="notice" id="noticeText"></div>
         </div>
       </section>
 
-      <!-- Prompt chips -->
       <section class="card">
         <div class="card__head">
-          <h2 id="promptsTitle">Готовые промпты</h2>
-          <span class="tag" id="promptsTag">нажми чтобы вставить</span>
+          <h2 id="promptsTitle"></h2>
+          <span class="tag" id="promptsTag"></span>
         </div>
-
         <div class="card__body">
           <div class="chips" id="chips"></div>
         </div>
       </section>
+    </aside>
 
-      <!-- Info boards -->
-      <section class="card">
-        <div class="card__head">
-          <h2 id="boardsTitle">Инфо-панель</h2>
-          <span class="tag">FAQ</span>
-        </div>
-
-        <div class="card__body boards">
-          <div class="board">
-            <div class="board__title" id="b1t">Как формулировать вопрос</div>
-            <div class="board__text" id="b1x">Класс → тема → что нужно → текст задания.</div>
-          </div>
-          <div class="board">
-            <div class="board__title" id="b2t">Если не понял</div>
-            <div class="board__text" id="b2x">Скажи “объясни проще” или “приведи ещё пример”.</div>
-          </div>
-          <div class="board">
-            <div class="board__title" id="b3t">Про контрольные</div>
-            <div class="board__text" id="b3x">Мы не даём готовые ответы — даём шаги и проверку.</div>
-          </div>
-        </div>
-      </section>
-    </section>
-
-    <!-- Chat -->
+    <!-- RIGHT -->
     <section class="card chat">
       <div class="chat__head">
         <div>
-          <h2 id="chatTitle">Чат</h2>
-          <p class="muted" id="chatSub">Напиши вопрос — отвечу по шагам и в конце задам уточняющий вопрос.</p>
+          <h2 id="chatTitle"></h2>
+          <div class="chat__sub" id="chatSub"></div>
         </div>
-        <div class="badge badge--soft" title="Подсказка">
-          Enter — отправить <span class="kbd">Shift+Enter</span> новая строка
-        </div>
+        <span class="tag" id="hintTag"></span>
       </div>
 
-      <div class="chat__box" id="chatBox" aria-live="polite"></div>
+      <div class="chat__box" id="chatBox"></div>
 
-      <div>
-        <form class="chat__foot" id="chatForm">
-          <textarea class="chat__input" id="message" rows="2"
-            placeholder="Напиши вопрос… (пример: 7 класс, уравнения, объясни шагами)"
-          ></textarea>
-          <button class="btn btn--primary" type="submit" id="sendBtn">Отправить</button>
-        </form>
-        <div class="helper" id="helperText">
-          Ответы могут ошибаться. Важное — перепроверь.
-        </div>
+      <div class="chat__foot">
+        <textarea id="message" class="chat__input" rows="2"></textarea>
+        <button class="btn btn--primary" id="sendBtn" type="button"></button>
       </div>
+      <div class="helper" id="helperText"></div>
     </section>
   </main>
 
   <div class="toast" id="toast">
-    <p class="toast__title" id="toastTitle">Подсказка</p>
-    <p class="toast__text" id="toastText"></p>
+    <div class="toast__title" id="toastTitle"></div>
+    <div class="toast__text" id="toastText"></div>
   </div>
 
   <script src="./script.js"></script>
