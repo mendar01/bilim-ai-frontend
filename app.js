@@ -1,4 +1,4 @@
-const BACKEND_URL = "https://bilim-ai-backend-zavo.onrender.com/"; // <-- поменяй!
+const BACKEND_URL = "https://bilim-ai-backend-zavo.onrender.com"; // <-- поменяй!
 
 const chat = document.getElementById("chat");
 const sendBtn = document.getElementById("send");
