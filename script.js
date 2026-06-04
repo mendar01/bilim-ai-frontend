@@ -1,5 +1,7 @@
 // ======= НАСТРОЙКА: укажи backend URL =======
 const API_URL = "https://bilim-ai-backend-zavo.onrender.com/api/chat";
+
+// ======= SCORE =======
 let score = Number(localStorage.getItem("score") || 0);
 
 function renderScore(){
@@ -11,7 +13,8 @@ function addScore(delta){
   localStorage.setItem("score", String(score));
   renderScore();
 }
-// Elements
+
+// ======= Elements =======
 const langKz = document.getElementById("langKz");
 const langRu = document.getElementById("langRu");
 const langPill = document.getElementById("langPill");
@@ -32,7 +35,7 @@ const toast = document.getElementById("toast");
 const toastTitle = document.getElementById("toastTitle");
 const toastText = document.getElementById("toastText");
 
-// Text nodes
+// ======= i18n =======
 const T = {
   ru: {
     subtitle: "Учебный помощник · Понятно · Красиво · Быстро",
@@ -56,7 +59,8 @@ const T = {
     helper: "Ответы могут ошибаться. Важное — перепроверь.",
     tipToastTitle: "Подсказка",
     tipToastText: "Пример: «8 класс, физика. Объясни законы Ньютона и реши 1 задачу»",
-    cleared: "Чат очищен. Напиши новый вопрос."
+    cleared: "Чат очищен. Напиши новый вопрос.",
+    aiErrorPrefix: "Ошибка: "
   },
   kz: {
     subtitle: "Оқу көмекшісі · Түсінікті · Әдемі · Жылдам",
@@ -80,10 +84,12 @@ const T = {
     helper: "Жауап қате болуы мүмкін. Міндетті түрде тексер.",
     tipToastTitle: "Кеңес",
     tipToastText: "Мысал: «8-сынып, физика. Ньютон заңдарын түсіндір және 1 есеп шығар»",
-    cleared: "Чат тазаланды. Жаңа сұрақ жаз."
+    cleared: "Чат тазаланды. Жаңа сұрақ жаз.",
+    aiErrorPrefix: "Қате: "
   }
 };
 
+// ======= Prompts =======
 const PROMPTS = {
   ru: [
     { title: "Объясни тему", text: "7 класс, математика: объясни тему «линейные уравнения» с примерами." },
@@ -99,12 +105,14 @@ const PROMPTS = {
   ]
 };
 
+// ======= UI helpers =======
 function setText(id, value){
   const el = document.getElementById(id);
   if (el) el.textContent = value;
 }
 
 function toastShow(title, text, ms=2600){
+  if (!toast || !toastTitle || !toastText) return;
   toastTitle.textContent = title;
   toastText.textContent = text;
   toast.classList.add("show");
@@ -113,6 +121,7 @@ function toastShow(title, text, ms=2600){
 }
 
 function addMsg(text, who="ai"){
+  if (!chatBox) return;
   const row = document.createElement("div");
   row.className = `msg msg--${who}`;
   const b = document.createElement("div");
@@ -124,8 +133,9 @@ function addMsg(text, who="ai"){
 }
 
 function renderPrompts(lang){
+  if (!chipsEl) return;
   chipsEl.innerHTML = "";
-  PROMPTS[lang].forEach(p => {
+  (PROMPTS[lang] || []).forEach(p => {
     const chip = document.createElement("div");
     chip.className = "chip";
     chip.innerHTML = `<p class="chip__title"></p><p class="chip__text"></p>`;
@@ -133,6 +143,7 @@ function renderPrompts(lang){
     chip.querySelector(".chip__text").textContent = p.text;
 
     chip.addEventListener("click", () => {
+      if (!messageEl) return;
       messageEl.value = p.text;
       messageEl.focus();
       toastShow(T[lang].tipToastTitle, T[lang].promptsTag, 1600);
@@ -142,128 +153,20 @@ function renderPrompts(lang){
   });
 }
 
-function applyLang(lang){
-  document.documentElement.lang = (lang === "kz") ? "kk" : "ru";
-  localStorage.setItem("lang", lang);
-
-  // buttons active + pill position
-  langKz.classList.toggle("active", lang === "kz");
-  langRu.classList.toggle("active", lang === "ru");
-  // left=KZ, right=RU (buttons are KZ then RU)
-  langPill.style.transform = (lang === "kz") ? "translateX(0px)" : "translateX(48px)";
-
-  setText("subtitle", T[lang].subtitle);
-  showTipsBtn.textContent = T[lang].showTips;
-  clearChatBtn.textContent = T[lang].clear;
-
-  setText("settingsTitle", T[lang].settingsTitle);
-  setText("statusText", T[lang].status);
-  setText("roleLabel", T[lang].role);
-  setText("subjectLabel", T[lang].subject);
-  setText("modeLabel", T[lang].mode);
-
-  setText("modeExplainOpt", T[lang].modeExplain);
-  setText("modeCheckOpt", T[lang].modeCheck);
-
-  document.getElementById("noticeText").textContent = T[lang].notice;
-
-  setText("promptsTitle", T[lang].promptsTitle);
-  setText("promptsTag", T[lang].promptsTag);
-
-  setText("chatTitle", T[lang].chatTitle);
-  setText("chatSub", T[lang].chatSub);
-  setText("hintTag", T[lang].hintTag);
-
-  messageEl.placeholder = T[lang].inputPh;
-  sendBtn.textContent = T[lang].send;
-  setText("helperText", T[lang].helper);
-renderScore();
-  renderPrompts(lang);
-}
-
-async function send(){
-  const msg = messageEl.value.trim();
-  if (!msg) return;
-
-  addMsg(msg, "user");
-  messageEl.value = "";
-  messageEl.focus();
-
-  sendBtn.disabled = true;
-
-  try{
-    const r = await fetch(API_URL, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        role: roleEl.value,
-        subject: subjectEl.value,
-        mode: modeEl.value,
-        message: msg
-      })
-    });
-
-    const data = await r.json();
-    if (!r.ok) throw new Error(data?.error || "Request failed");
-    addMsg(data.answer || "…", "ai");
-  }catch(e){
-    addMsg("Ошибка: " + (e.message || e), "ai");
-  }finally{
-    sendBtn.disabled = false;
-  }
-}
-
-// Events
-langKz.addEventListener("click", () => applyLang("kz"));
-langRu.addEventListener("click", () => applyLang("ru"));
-
-showTipsBtn.addEventListener("click", () => {
-  const lang = localStorage.getItem("lang") || "ru";
-  toastShow(T[lang].tipToastTitle, T[lang].tipToastText, 3200);
-});
-
-clearChatBtn.addEventListener("click", () => {
-  const lang = localStorage.getItem("lang") || "ru";
-  chatBox.innerHTML = "";
-  addMsg(T[lang].cleared, "ai");
-  // после того как добавили ответ AI:
-if (isLikelyReadyEssayRequest(msg)) {
-  attachIntegrityChoiceUnderLastAiMessage();
-}
-});
-
-sendBtn.addEventListener("click", send);
-messageEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey){
-    e.preventDefault();
-    send();
-  }
-});
-
-// Boot
-(function init(){
-  const saved = localStorage.getItem("lang");
-  const lang = (saved === "kz" || saved === "ru") ? saved : "ru";
-  applyLang(lang);
-
-  // стартовое сообщение уже на выбранном языке
-  if (lang === "ru"){
-    addMsg("Привет! Напиши класс/тему и что нужно: объяснить или проверить.", "ai");
-  } else {
-    addMsg("Сәлем! Сынып/тақырып және не керек екенін жаз: түсіндіру ме, тексеру ме.", "ai");
-  }
-})();
-
+// ======= Academic integrity choice logic =======
 function isLikelyReadyEssayRequest(userText){
   const t = (userText || "").toLowerCase();
 
   const essayWords = [
-    "эссе","сочинение","реферат","доклад","презентация","конспект","мәтін","шығарма"
+    "эссе","сочинение","реферат","доклад","презентация","конспект",
+    "мәтін","шығарма","insha","essay"
   ];
 
   const readyWords = [
-    "готов", "полностью", "целиком", "напис", "сразу текст", "дай текст",
-    "жазып бер", "дайын", "толық", "көшіріп", "копировать", "көшіріп алу"
+    "готов", "полностью", "целиком", "напиши", "написать", "сразу текст",
+    "дай текст", "полный текст",
+    "жазып бер", "жазып берші", "дайын", "толық", "көшіріп", "көшіріп алу",
+    "копировать"
   ];
 
   const hasEssay = essayWords.some(w => t.includes(w));
@@ -271,24 +174,21 @@ function isLikelyReadyEssayRequest(userText){
 
   return hasEssay && wantsReady;
 }
+
 function attachIntegrityChoiceUnderLastAiMessage(){
-  const chatBox = document.getElementById("chatBox");
   if (!chatBox) return;
 
-  // ищем последнее AI сообщение
-  const aiMsgs = chatBox.querySelectorAll(".msg--ai .msg__bubble");
-  const lastBubble = aiMsgs[aiMsgs.length - 1];
+  const aiBubbles = chatBox.querySelectorAll(".msg--ai .msg__bubble");
+  const lastBubble = aiBubbles[aiBubbles.length - 1];
   if (!lastBubble) return;
 
-  // чтобы не добавлялось дважды
+  // prevent duplicates
   if (lastBubble.querySelector(".choice")) return;
 
   const wrap = document.createElement("div");
   wrap.className = "choice";
   wrap.innerHTML = `
-    <div class="choice__title">
-      Таңдау жаса: ЖИ-ді қалай қолданасың?
-    </div>
+    <div class="choice__title">Таңдау жаса: ЖИ-ді қалай қолданасың?</div>
     <div class="choice__grid">
       <button class="choice__btn" type="button" data-opt="A">
         <b>A)</b> ЖИ-ге дайын эссе жазғызып, көшіріп алу
@@ -301,16 +201,14 @@ function attachIntegrityChoiceUnderLastAiMessage(){
   `;
 
   const result = wrap.querySelector(".choice__result");
+  const buttons = wrap.querySelectorAll(".choice__btn");
 
-  wrap.querySelectorAll(".choice__btn").forEach(btn => {
+  buttons.forEach(btn => {
     btn.addEventListener("click", () => {
       const opt = btn.getAttribute("data-opt");
-
-      // блокируем повторный выбор
-      wrap.querySelectorAll(".choice__btn").forEach(b => b.disabled = true);
+      buttons.forEach(b => b.disabled = true);
 
       result.style.display = "block";
-
       if (opt === "A"){
         result.className = "choice__result choice__result--red";
         result.textContent = "Қызыл аймақ: Академиялық адалдық бұзылды, ұпай шегеріледі!";
@@ -320,11 +218,126 @@ function attachIntegrityChoiceUnderLastAiMessage(){
         result.textContent = "Жасыл аймақ: Керемет! Сен ЖИ-ді ассистент ретінде қолдандың";
         addScore(+2);
       }
-
-      // обновим бейдж
-      renderScore();
     });
   });
 
   lastBubble.appendChild(wrap);
 }
+
+// ======= Language apply =======
+function applyLang(lang){
+  document.documentElement.lang = (lang === "kz") ? "kk" : "ru";
+  localStorage.setItem("lang", lang);
+
+  if (langKz) langKz.classList.toggle("active", lang === "kz");
+  if (langRu) langRu.classList.toggle("active", lang === "ru");
+  if (langPill) langPill.style.transform = (lang === "kz") ? "translateX(0px)" : "translateX(48px)";
+
+  setText("subtitle", T[lang].subtitle);
+  if (showTipsBtn) showTipsBtn.textContent = T[lang].showTips;
+  if (clearChatBtn) clearChatBtn.textContent = T[lang].clear;
+
+  setText("settingsTitle", T[lang].settingsTitle);
+  setText("statusText", T[lang].status);
+  setText("roleLabel", T[lang].role);
+  setText("subjectLabel", T[lang].subject);
+  setText("modeLabel", T[lang].mode);
+
+  setText("modeExplainOpt", T[lang].modeExplain);
+  setText("modeCheckOpt", T[lang].modeCheck);
+
+  const notice = document.getElementById("noticeText");
+  if (notice) notice.textContent = T[lang].notice;
+
+  setText("promptsTitle", T[lang].promptsTitle);
+  setText("promptsTag", T[lang].promptsTag);
+
+  setText("chatTitle", T[lang].chatTitle);
+  setText("chatSub", T[lang].chatSub);
+  setText("hintTag", T[lang].hintTag);
+
+  if (messageEl) messageEl.placeholder = T[lang].inputPh;
+  if (sendBtn) sendBtn.textContent = T[lang].send;
+  setText("helperText", T[lang].helper);
+
+  renderScore();
+  renderPrompts(lang);
+}
+
+// ======= Send message =======
+async function send(){
+  const msg = (messageEl?.value || "").trim();
+  if (!msg) return;
+
+  addMsg(msg, "user");
+  messageEl.value = "";
+  messageEl.focus();
+
+  sendBtn.disabled = true;
+
+  const lang = localStorage.getItem("lang") || "ru";
+
+  try{
+    const r = await fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        role: roleEl?.value || "",
+        subject: subjectEl?.value || "",
+        mode: modeEl?.value || "",
+        message: msg
+      })
+    });
+
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data?.error || "Request failed");
+
+    addMsg(data.answer || "…", "ai");
+
+    // IMPORTANT: show choice only when user asked for ready essay/text
+    if (isLikelyReadyEssayRequest(msg)) {
+      attachIntegrityChoiceUnderLastAiMessage();
+    }
+  }catch(e){
+    addMsg(T[lang].aiErrorPrefix + (e.message || e), "ai");
+  }finally{
+    sendBtn.disabled = false;
+  }
+}
+
+// ======= Events =======
+langKz?.addEventListener("click", () => applyLang("kz"));
+langRu?.addEventListener("click", () => applyLang("ru"));
+
+showTipsBtn?.addEventListener("click", () => {
+  const lang = localStorage.getItem("lang") || "ru";
+  toastShow(T[lang].tipToastTitle, T[lang].tipToastText, 3200);
+});
+
+clearChatBtn?.addEventListener("click", () => {
+  const lang = localStorage.getItem("lang") || "ru";
+  if (chatBox) chatBox.innerHTML = "";
+  addMsg(T[lang].cleared, "ai");
+});
+
+sendBtn?.addEventListener("click", send);
+
+messageEl?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    send();
+  }
+});
+
+// ======= Boot =======
+(function init(){
+  const saved = localStorage.getItem("lang");
+  const lang = (saved === "kz" || saved === "ru") ? saved : "ru";
+  applyLang(lang);
+
+  if (lang === "ru"){
+    addMsg("Привет! Напиши класс/тему и что нужно: объяснить или проверить.", "ai");
+  } else {
+    addMsg("Сәлем! Сынып/тақырып және не керек екенін жаз: түсіндіру ме, тексеру ме.", "ai");
+  }
+})();
